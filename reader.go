@@ -20,8 +20,12 @@ func reader(reader *bufio.Reader, outCh chan packet.Packet) {
 	close(outCh)
 }
 
-func Reader(r *bufio.Reader) <-chan packet.Packet {
+func Reader(r io.Reader) <-chan packet.Packet {
 	outCh := make(chan packet.Packet)
-	go reader(r, outCh)
+	if _, ok := r.(*bufio.Reader); !ok {
+		r = bufio.NewReader(r)
+	}
+
+	go reader(r.(*bufio.Reader), outCh)
 	return outCh
 }
