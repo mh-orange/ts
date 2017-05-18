@@ -1,7 +1,6 @@
 package ts
 
 import (
-	"bufio"
 	"bytes"
 	"sync"
 	"testing"
@@ -50,7 +49,7 @@ func TestSelect(t *testing.T) {
 
 	buffer := bytes.NewReader(b)
 
-	demux := NewDemux(Reader(bufio.NewReader(buffer)))
+	demux := NewDemux(Reader(buffer))
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
 	for i := 0; i < len(pids); i++ {
@@ -71,11 +70,11 @@ func TestSelect(t *testing.T) {
 			// sometimes an extra packet is written if the demuxer is blocked
 			// at this pid's channel write when we clear the selection, this
 			// should be at most one extra packet written to the channel
+			mutex.Lock()
 			if len(pids[pid]) > 4 {
-				mutex.Lock()
 				pids[pid] = pids[pid][0 : len(pids[pid])-1]
-				mutex.Unlock()
 			}
+			mutex.Unlock()
 			wg.Done()
 		}(uint16(i), ch)
 	}
