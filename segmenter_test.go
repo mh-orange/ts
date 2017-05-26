@@ -1,39 +1,28 @@
 package ts
 
 import (
+	"math"
 	"testing"
 	"time"
-
-	"github.com/Comcast/gots"
-	"github.com/Comcast/gots/packet"
 )
 
-func getPacket(pusi bool, rai bool, pts uint64) packet.Packet {
-	pkt := packet.Create(1)
-	if pusi {
-		packet.WithPUSI(&pkt)
-	}
+func getPacket(pusi bool, rai bool, pts uint64) Packet {
+	pkt := NewPacket()
+	pkt.SetPID(1)
+	pkt.SetPUSI(pusi)
+	pkt.SetHasPayload(true)
 
-	packet.WithHasPayloadFlag(&pkt)
 	if rai {
-		packet.WithHasAdaptationFieldFlag(&pkt)
-		pkt[4] = 0x01
-		pkt[5] |= 0x40
+		pkt.SetHasAdaptationField(true)
+		field, _ := pkt.AdaptationField()
+		field.SetIsRandomAccess(true)
 	}
 
 	if pusi {
-		pay, _ := packet.Payload(pkt)
-		pay[0] = 0x00
-		pay[1] = 0x00
-		pay[2] = 0x01
-		pay[3] = 0xb8
-		pay[4] = 0x00
-		pay[5] = 0x08
-		pay[6] = 0x20
-		pay[7] = 0x80
-		pay[8] = 0x05
-
-		gots.InsertPTS(pay[9:14], pts)
+		payload, _ := pkt.Payload()
+		header := FillPESHeader(payload)
+		header.SetHasPTS(true)
+		header.SetPTS(newTimestamp(pts, 90000))
 	}
 	return pkt
 }
@@ -43,7 +32,7 @@ func TestSegmenter(t *testing.T) {
 	numSegments := 10
 	interval := 10
 	numPackets := numSegments * interval
-	inCh := make(chan packet.Packet, numPackets)
+	inCh := make(chan Packet, numPackets)
 
 	for i := 0; i < numSegments; i++ {
 		// emit 1 pps for "interval" seconds
@@ -55,10 +44,11 @@ func TestSegmenter(t *testing.T) {
 	close(inCh)
 
 	rxSegments := 0
-	expected := time.Duration(uint64(interval) * PTSFrequency * (1000000000 / PTSFrequency))
+	expected := 10 * time.Second
 	for segment := range SegmentStream(inCh) {
-		if segment.Duration != expected {
-			t.Errorf("Segment %d expected to be duration %s but got %s", rxSegments, expected, segment.Duration)
+		received := time.Second * time.Duration(math.Floor(segment.Duration.Seconds()+0.5))
+		if received != expected {
+			t.Errorf("Segment %d expected to be duration %s but got %s", rxSegments, expected, received)
 		}
 		rxSegments++
 	}

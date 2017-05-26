@@ -3,10 +3,6 @@ package ts
 import (
 	"bytes"
 	"time"
-
-	"github.com/Comcast/gots/packet"
-	"github.com/Comcast/gots/packet/adaptationfield"
-	"github.com/Comcast/gots/pes"
 )
 
 type Segment struct {
@@ -14,36 +10,25 @@ type Segment struct {
 	Buffer   []byte
 }
 
-func isPes(pkt packet.Packet) (header pes.PESHeader, found bool) {
-	payload, _ := packet.Payload(pkt)
-	found, _ = packet.PayloadUnitStartIndicator(pkt)
-
-	if found && len(payload) > 3 && bytes.Equal(payload[0:3], []byte{0x00, 0x00, 0x01}) {
-		b, _ := packet.PESHeader(pkt)
-		header, _ = pes.NewPESHeader(b)
-	}
-	return
-}
-
-func hasPts(pkt packet.Packet) (header pes.PESHeader, found bool) {
-	if header, found = isPes(pkt); found {
+func hasPts(pkt Packet) (header PESHeader, found bool) {
+	if header, err := pkt.PESHeader(); err == nil {
 		found = header.HasPTS()
 	}
 	return
 }
 
-func getPts(pkt packet.Packet) TimeStamp {
+func getPts(pkt Packet) TimeStamp {
 	pts := NewPTS()
 	if _, ok := hasPts(pkt); ok {
-		pay, _ := packet.Payload(pkt)
+		pay, _ := pkt.Payload()
 		pts = CalculatePTS(pay[9:14])
 	}
 	return pts
 }
 
-func hasRAI(pkt packet.Packet) bool {
-	if ok, _ := packet.ContainsAdaptationField(pkt); ok {
-		return adaptationfield.IsRandomAccess(pkt)
+func hasRAI(pkt Packet) bool {
+	if field, err := pkt.AdaptationField(); err == nil {
+		return field.IsRandomAccess()
 	}
 	return false
 }
@@ -60,7 +45,7 @@ func emit(buffer *bytes.Buffer, duration time.Duration, outCh chan Segment) {
 	}
 }
 
-func segmentStream(inCh <-chan packet.Packet, outCh chan Segment) {
+func segmentStream(inCh <-chan Packet, outCh chan Segment) {
 	buffer := bytes.NewBuffer([]byte{})
 	startPts := NewPTS()
 	endPts := NewPTS()
@@ -94,7 +79,7 @@ func segmentStream(inCh <-chan packet.Packet, outCh chan Segment) {
 	close(outCh)
 }
 
-func SegmentStream(inCh <-chan packet.Packet) <-chan Segment {
+func SegmentStream(inCh <-chan Packet) <-chan Segment {
 	outCh := make(chan Segment)
 	go segmentStream(inCh, outCh)
 	return outCh

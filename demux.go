@@ -2,33 +2,31 @@ package ts
 
 import (
 	"sync"
-
-	"github.com/Comcast/gots/packet"
 )
 
 type Demux interface {
-	Select(pid uint16) <-chan packet.Packet
+	Select(pid uint16) <-chan Packet
 	Clear(pid uint16)
 	Run()
 }
 
 type demux struct {
-	inCh       <-chan packet.Packet
-	channels   map[uint16]chan packet.Packet
+	inCh       <-chan Packet
+	channels   map[uint16]chan Packet
 	chMutex    sync.Mutex
 	clearPids  []uint16
 	clearMutex sync.Mutex
 }
 
-func NewDemux(inCh <-chan packet.Packet) Demux {
+func NewDemux(inCh <-chan Packet) Demux {
 	return &demux{
 		inCh:     inCh,
-		channels: make(map[uint16]chan packet.Packet),
+		channels: make(map[uint16]chan Packet),
 	}
 }
 
-func (d *demux) Select(pid uint16) <-chan packet.Packet {
-	ch := make(chan packet.Packet)
+func (d *demux) Select(pid uint16) <-chan Packet {
+	ch := make(chan Packet)
 	d.chMutex.Lock()
 	d.channels[pid] = ch
 	d.chMutex.Unlock()
@@ -43,11 +41,11 @@ func (d *demux) Clear(pid uint16) {
 
 func (d *demux) Run() {
 	for pkt := range d.inCh {
-		if ok, _ := packet.IsNull(pkt); ok {
+		if pkt.IsNull() {
 			continue
 		}
 
-		pid, _ := packet.Pid(pkt)
+		pid := pkt.PID()
 		d.chMutex.Lock()
 		if channel, found := d.channels[pid]; found {
 			channel <- pkt

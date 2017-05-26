@@ -5,9 +5,6 @@ import (
 	"encoding/hex"
 	"math/rand"
 	"testing"
-
-	"github.com/Comcast/gots"
-	"github.com/Comcast/gots/packet"
 )
 
 func createPayload(length int) []byte {
@@ -24,7 +21,7 @@ func createPayload(length int) []byte {
 	payload[2] = uint8(0xff&length - 3)
 
 	// compute CRC
-	computedCrc := gots.ComputeCRC(payload[0 : len(payload)-4])
+	computedCrc := ComputeCRC(payload[0 : len(payload)-4])
 	copy(payload[len(payload)-4:], computedCrc)
 
 	return payload
@@ -32,7 +29,7 @@ func createPayload(length int) []byte {
 
 var cc uint8
 
-func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, payload []byte) []packet.Packet {
+func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, payload []byte) []Packet {
 	p := make([]byte, len(payload)+offset+1)
 	copy(p[offset+1:], payload)
 
@@ -44,32 +41,25 @@ func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, p
 		p[i] = 0xff
 	}
 
-	packets := make([]packet.Packet, 0)
+	packets := make([]Packet, 0)
 
 	offset = 0
 	for offset < len(payload) {
 		if discontinuity {
 			cc += 10
 		}
+		pkt := NewPacket()
+		pkt.SetContinuityCounter(cc)
+		pkt.SetPUSI(offset == 0)
+		pkt.SetHasPayload(true)
 
-		pusi := true
-		if offset != 0 {
-			pusi = false
-		}
-
-		var pkt packet.Packet
 		if expectedDiscontinuity {
-			pkt = packet.CreateDCPacket(1, cc)
-			packet.WithHasPayloadFlag(&pkt)
-			if pusi {
-				packet.WithPUSI(&pkt)
-			}
-			pkt[4] = 0x01
-		} else {
-			pkt = packet.CreateTestPacket(1, cc, pusi, true)
+			pkt.SetHasAdaptationField(true)
+			field, _ := pkt.AdaptationField()
+			field.SetIsDiscontinuous(true)
 		}
 
-		offset += packet.SetPayload(&pkt, p[offset:])
+		offset += pkt.SetPayload(p[offset:])
 		packets = append(packets, pkt)
 
 		cc += 1
@@ -122,7 +112,7 @@ func TestTableHandler(t *testing.T) {
 	}
 
 	expectedPayloads := 0
-	packets := make([]packet.Packet, 0)
+	packets := make([]Packet, 0)
 
 	for _, test := range tests {
 		test.payload = createPayload(test.length)
@@ -135,7 +125,7 @@ func TestTableHandler(t *testing.T) {
 		}
 	}
 
-	inCh := make(chan packet.Packet, len(packets))
+	inCh := make(chan Packet, len(packets))
 	for _, pkt := range packets {
 		inCh <- pkt
 	}

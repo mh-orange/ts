@@ -2,15 +2,11 @@ package ts
 
 import (
 	"bytes"
-
-	"github.com/Comcast/gots"
-	"github.com/Comcast/gots/packet"
-	"github.com/Comcast/gots/packet/adaptationfield"
 )
 
 type tableStreamHandler struct {
 	buffer []byte
-	inCh   <-chan packet.Packet
+	inCh   <-chan Packet
 	outCh  chan []byte
 }
 
@@ -35,23 +31,22 @@ func (tsh *tableStreamHandler) run() {
 		discontinuity := false
 		count++
 		// check continuity counter
-		nextCc, _ := packet.ContinuityCounter(pkt)
+		nextCc := pkt.ContinuityCounter()
 		if !first && cc+1 != nextCc {
-			discontinuity = true
 			// check for expected discontinuity
-			if ok, _ := packet.ContainsAdaptationField(pkt); ok {
-				discontinuity = !adaptationfield.IsDiscontinuous(pkt)
+			if field, err := pkt.AdaptationField(); err == nil {
+				discontinuity = !field.IsDiscontinuous()
 			}
 		}
 		first = false
 		cc = nextCc
 
-		if ok, _ := packet.ContainsPayload(pkt); ok {
-			payload, _ = packet.Payload(pkt)
+		if pkt.HasPayload() {
+			payload, _ = pkt.Payload()
 		}
 
 		// check payload unit start indicator
-		if ok, _ := packet.PayloadUnitStartIndicator(pkt); ok {
+		if pkt.PUSI() {
 			tsh.emit()
 			tsh.buffer = make([]byte, len(payload))
 			copy(tsh.buffer, payload)
@@ -66,7 +61,7 @@ func (tsh *tableStreamHandler) run() {
 	close(tsh.outCh)
 }
 
-func HandleTableStreams(inCh <-chan packet.Packet) <-chan []byte {
+func HandleTableStreams(inCh <-chan Packet) <-chan []byte {
 	outCh := make(chan []byte)
 	handler := &tableStreamHandler{
 		inCh:  inCh,
@@ -80,7 +75,7 @@ func HandleCrcStreams(inCh <-chan []byte) <-chan []byte {
 	outCh := make(chan []byte)
 	go func(inCh <-chan []byte, outCh chan []byte) {
 		for buffer := range inCh {
-			crc := gots.ComputeCRC(buffer[0 : len(buffer)-4])
+			crc := ComputeCRC(buffer[0 : len(buffer)-4])
 			if bytes.Equal(crc, buffer[len(buffer)-4:]) {
 				outCh <- buffer
 			}
