@@ -7,6 +7,26 @@ import (
 )
 
 func TestUtf16ToString(t *testing.T) {
+	tests := []struct {
+		input  []byte
+		output string
+	}{
+		{
+			input:  []byte{0x00, 0x66, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x00},
+			output: "foo",
+		},
+		{
+			input:  []byte{0x00, 0x62, 0x00, 0x61, 0x00, 0x72, 0x00, 0x00},
+			output: "bar",
+		},
+	}
+
+	for i, test := range tests {
+		str := Utf16ToString(test.input, 0, len(test.input))
+		if str != test.output {
+			t.Errorf("Test %d expected \"%s\" but got \"%s\"", i, test.output, str)
+		}
+	}
 }
 
 func TestBool(t *testing.T) {

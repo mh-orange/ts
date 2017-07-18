@@ -11,33 +11,34 @@ var (
 )
 
 // Credit: https://github.com/Comcast/gots/blob/master/packet/io.go
-func readSync(reader *bufio.Reader) error {
+func readSync(reader *bufio.Reader) (err error) {
 	data := make([]byte, 1)
 	for i := int64(0); ; i++ {
-		_, err := io.ReadFull(reader, data)
+		_, err = io.ReadFull(reader, data)
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			break
+			err = ErrSyncByteNotFound
 		}
 		if err != nil {
-			return err
+			break
 		}
 		if int(data[0]) == 0x47 {
 			// check next 188th byte
 			rp := bufio.NewReaderSize(reader, PacketSize) // extends only if needed
-			nextData, err := rp.Peek(PacketSize)
+			var nextData []byte
+			nextData, err = rp.Peek(PacketSize)
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
-				break
+				err = ErrSyncByteNotFound
 			}
 			if err != nil {
-				return err
+				break
 			}
 			if nextData[187] == 0x47 {
 				reader.UnreadByte()
-				return nil
+				break
 			}
 		}
 	}
-	return ErrSyncByteNotFound
+	return
 }
 
 func reader(reader *bufio.Reader, outCh chan Packet) {
