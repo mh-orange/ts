@@ -1,5 +1,9 @@
 package psip
 
+import (
+	"github.com/mh-orange/ts"
+)
+
 type channel []byte
 
 const (
@@ -9,15 +13,15 @@ const (
 )
 
 func (c channel) ShortName() string {
-	return utf16ToString(c, 0, 14)
+	return ts.Utf16ToString(c, 0, 14)
 }
 
 func (c channel) MajorNumber() uint16 {
-	return getUimsbf16(c, 14, 16) >> 2 & 0x3ff
+	return ts.Uimsbf16(c[14:], 16) >> 2 & 0x3ff
 }
 
 func (c channel) MinorNumber() uint16 {
-	return getUimsbf16(c, 15, 10)
+	return ts.Uimsbf16(c[15:], 10)
 }
 
 func (c channel) ModulationMode() uint8 {

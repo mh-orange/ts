@@ -1,7 +1,7 @@
 package psip
 
 import (
-	"github.com/abates/orange-ts"
+	"github.com/mh-orange/ts"
 )
 
 type PSIPHandler struct {

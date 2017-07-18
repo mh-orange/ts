@@ -1,7 +1,7 @@
 package psip
 
 import (
-	"github.com/Comcast/gots/packet"
+	"github.com/mh-orange/ts"
 )
 
 const (
@@ -45,6 +45,6 @@ type VCT interface {
 
 // Tables are the collection of all ATSC PSIP tables
 type Tables interface {
-	Update(packet.Packet) error
+	Update(ts.Packet) error
 	VCT() VCT
 }

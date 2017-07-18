@@ -1,5 +1,9 @@
 package psip
 
+import (
+	"github.com/mh-orange/ts"
+)
+
 type tvct []byte
 
 func newTVCT(payload []byte) VCT {
@@ -7,43 +11,43 @@ func newTVCT(payload []byte) VCT {
 }
 
 func (vct tvct) SectionSyntaxIndicator() bool {
-	return getBool(vct, 0, 0)
+	return ts.Bool(vct[0], 0)
 }
 
 func (vct tvct) PrivateIndicator() bool {
-	return getBool(vct, 0, 1)
+	return ts.Bool(vct[0], 1)
 }
 
 func (vct tvct) SectionLength() int {
-	return int(getUimsbf16(vct, 1, 12))
+	return int(ts.Uimsbf16(vct[1:], 12))
 }
 
 func (vct tvct) TransportStreamID() uint16 {
-	return getUimsbf16(vct, 3, 16)
+	return ts.Uimsbf16(vct[3:], 16)
 }
 
 func (vct tvct) VersionNumber() uint8 {
-	return getUimsbf8(vct, 5)
+	return ts.Uimsbf8(vct[5])
 }
 
 func (vct tvct) CurrentNextIndicator() bool {
-	return getBool(vct, 5, 7)
+	return ts.Bool(vct[5], 7)
 }
 
 func (vct tvct) SectionNumber() uint8 {
-	return getUimsbf8(vct, 6)
+	return ts.Uimsbf8(vct[6])
 }
 
 func (vct tvct) LastSectionNumber() uint8 {
-	return getUimsbf8(vct, 7)
+	return ts.Uimsbf8(vct[7])
 }
 
 func (vct tvct) ProtocolVersion() uint8 {
-	return getUimsbf8(vct, 8)
+	return ts.Uimsbf8(vct[8])
 }
 
 func (vct tvct) NumChannelsInSection() int {
-	return int(getUimsbf8(vct, 9))
+	return int(ts.Uimsbf8(vct[9]))
 }
 
 func (vct tvct) Channels() []Channel {
@@ -67,7 +71,7 @@ func (vct tvct) channelLength() int {
 }
 
 func (vct tvct) AdditionalDescriptorsLength() uint16 {
-	return getUimsbf16(vct, 10+vct.channelLength(), 10)
+	return ts.Uimsbf16(vct[10+vct.channelLength():], 10)
 }
 
 func (vct tvct) Crc() []byte {
