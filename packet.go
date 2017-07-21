@@ -229,19 +229,19 @@ func (p Packet) SyncByte() byte {
 }
 
 func (p Packet) TEI() bool {
-	return Bool(p[1], 7)
+	return Bool(p[1], 0)
 }
 
 func (p Packet) PUSI() bool {
-	return Bool(p[1], 6)
+	return Bool(p[1], 1)
 }
 
 func (p Packet) SetPUSI(pusi bool) {
-	SetBool(&p[1], 6, pusi)
+	SetBool(&p[1], 1, pusi)
 }
 
 func (p Packet) TransportPriority() bool {
-	return Bool(p[1], 5)
+	return Bool(p[1], 2)
 }
 
 func (p Packet) PID() uint16 {
@@ -269,20 +269,20 @@ func (p Packet) ScrambledOdd() bool {
 }
 
 func (p Packet) HasAdaptationField() bool {
-	return Bool(p[3], 5)
+	return Bool(p[3], 2)
 }
 
 func (p Packet) SetHasAdaptationField(hasAdaptationField bool) {
-	SetBool(&p[3], 5, hasAdaptationField)
+	SetBool(&p[3], 2, hasAdaptationField)
 	SetUimsbf8(&p[4], 1)
 }
 
 func (p Packet) HasPayload() bool {
-	return Bool(p[3], 4)
+	return Bool(p[3], 3)
 }
 
 func (p Packet) SetHasPayload(hasPayload bool) {
-	SetBool(&p[3], 4, hasPayload)
+	SetBool(&p[3], 3, hasPayload)
 }
 
 func (p Packet) ContinuityCounter() uint8 {

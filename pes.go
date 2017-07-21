@@ -50,60 +50,60 @@ func (p PESHeader) ScramblingControl() byte {
 }
 
 func (p PESHeader) HasPriority() bool {
-	return Bool(p[6], 3)
+	return Bool(p[6], 4)
 }
 
 func (p PESHeader) IsAligned() bool {
-	return Bool(p[6], 2)
+	return Bool(p[6], 5)
 }
 
 func (p PESHeader) HasCopyright() bool {
-	return Bool(p[6], 1)
+	return Bool(p[6], 6)
 }
 
 func (p PESHeader) IsOriginal() bool {
-	return Bool(p[6], 0)
+	return Bool(p[6], 7)
 }
 
 func (p PESHeader) HasPTS() bool {
-	return Bool(p[7], 7)
+	return Bool(p[7], 0)
 }
 
 func (p PESHeader) SetHasPTS(hasPts bool) {
-	SetBool(&p[7], 7, hasPts)
+	SetBool(&p[7], 0, hasPts)
 	p.updateLength()
 }
 
 func (p PESHeader) HasDTS() bool {
-	return Bool(p[7], 6)
-}
-
-func (p PESHeader) SetHasDTS(hasDts bool) {
-	SetBool(&p[7], 6, hasDts)
-}
-
-func (p PESHeader) HasESCR() bool {
-	return Bool(p[7], 5)
-}
-
-func (p PESHeader) HasESRate() bool {
-	return Bool(p[7], 4)
-}
-
-func (p PESHeader) HasDSMTrickMode() bool {
-	return Bool(p[7], 3)
-}
-
-func (p PESHeader) HasAdditionalCopyInfo() bool {
-	return Bool(p[7], 2)
-}
-
-func (p PESHeader) HasCRC() bool {
 	return Bool(p[7], 1)
 }
 
+func (p PESHeader) SetHasDTS(hasDts bool) {
+	SetBool(&p[7], 1, hasDts)
+}
+
+func (p PESHeader) HasESCR() bool {
+	return Bool(p[7], 2)
+}
+
+func (p PESHeader) HasESRate() bool {
+	return Bool(p[7], 3)
+}
+
+func (p PESHeader) HasDSMTrickMode() bool {
+	return Bool(p[7], 4)
+}
+
+func (p PESHeader) HasAdditionalCopyInfo() bool {
+	return Bool(p[7], 5)
+}
+
+func (p PESHeader) HasCRC() bool {
+	return Bool(p[7], 6)
+}
+
 func (p PESHeader) HasExtension() bool {
-	return Bool(p[7], 0)
+	return Bool(p[7], 7)
 }
 
 func (p PESHeader) AdditionalLength() uint8 {

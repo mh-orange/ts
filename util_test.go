@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestUtf16ToString(t *testing.T) {
+func TestUtf16(t *testing.T) {
 	tests := []struct {
 		input  []byte
 		output string
@@ -24,7 +24,12 @@ func TestUtf16ToString(t *testing.T) {
 	for i, test := range tests {
 		str := Utf16ToString(test.input, 0, len(test.input))
 		if str != test.output {
-			t.Errorf("Test %d expected \"%s\" but got \"%s\"", i, test.output, str)
+			t.Errorf("Test %d decoding expected \"%s\" but got \"%s\"", i, test.output, str)
+		}
+
+		output := StringToUtf16(test.output)
+		if !bytes.Equal(test.input, output) {
+			t.Errorf("Test %d encoding expected %v but got %v", i, hex.Dump(test.input), hex.Dump(output))
 		}
 	}
 }
@@ -36,21 +41,21 @@ func TestBool(t *testing.T) {
 		expected bool
 	}{
 		{0x00, 0, false},
-		{0x01, 0, true},
-		{0x00, 1, false},
-		{0x02, 1, true},
-		{0x00, 2, false},
-		{0x04, 2, true},
-		{0x00, 3, false},
-		{0x08, 3, true},
-		{0x00, 4, false},
-		{0x10, 4, true},
-		{0x00, 5, false},
-		{0x20, 5, true},
+		{0x01, 7, true},
 		{0x00, 6, false},
-		{0x40, 6, true},
-		{0x00, 7, false},
-		{0x80, 7, true},
+		{0x02, 6, true},
+		{0x00, 5, false},
+		{0x04, 5, true},
+		{0x00, 4, false},
+		{0x08, 4, true},
+		{0x00, 3, false},
+		{0x10, 3, true},
+		{0x00, 2, false},
+		{0x20, 2, true},
+		{0x00, 1, false},
+		{0x40, 1, true},
+		{0x00, 0, false},
+		{0x80, 0, true},
 	}
 
 	for i, test := range tests {
@@ -68,14 +73,14 @@ func TestSetBool(t *testing.T) {
 		expected byte
 		bit      int
 	}{
-		{true, 0x00, 0x01, 0},
-		{false, 0x01, 0x00, 0},
-		{true, 0x00, 0x02, 1},
-		{false, 0x02, 0x00, 1},
-		{true, 0xfe, 0xff, 0},
-		{false, 0xff, 0xfe, 0},
-		{true, 0xfd, 0xff, 1},
-		{false, 0xff, 0xfd, 1},
+		{true, 0x00, 0x01, 7},
+		{false, 0x01, 0x00, 7},
+		{true, 0x00, 0x02, 6},
+		{false, 0x02, 0x00, 6},
+		{true, 0xfe, 0xff, 7},
+		{false, 0xff, 0xfe, 7},
+		{true, 0xfd, 0xff, 6},
+		{false, 0xff, 0xfd, 6},
 	}
 
 	for i, test := range tests {
