@@ -6,25 +6,25 @@ import (
 )
 
 var bitMask = []byte{
-	0x01,
-	0x02,
-	0x04,
-	0x08,
-	0x10,
-	0x20,
-	0x40,
 	0x80,
+	0x40,
+	0x20,
+	0x10,
+	0x08,
+	0x04,
+	0x02,
+	0x01,
 }
 
 var inverseBitMask = []byte{
-	0xfe,
-	0xfd,
-	0xfb,
-	0xf7,
-	0xef,
-	0xdf,
-	0xbf,
 	0x7f,
+	0xbf,
+	0xdf,
+	0xef,
+	0xf7,
+	0xfb,
+	0xfd,
+	0xfe,
 }
 
 var mask = []byte{
@@ -48,6 +48,16 @@ func Utf16ToString(b []byte, offset int, length int) string {
 		utfStr = append(utfStr, uint16(b[i]<<8)|uint16(b[i+1]))
 	}
 	return string(utf16.Decode(utfStr))
+}
+
+func StringToUtf16(str string) []byte {
+	pairs := utf16.Encode([]rune(str))
+	output := make([]byte, 2*len(pairs)+2)
+	for i, pair := range pairs {
+		output[i*2] = byte(pair >> 8)
+		output[i*2+1] = byte(pair & 0x00ff)
+	}
+	return output
 }
 
 func Bool(b byte, bit int) bool {
