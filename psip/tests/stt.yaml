@@ -1,0 +1,13 @@
+"System Time Table (no descriptors)":
+  bits: 
+    - { byte: 1, bit: 4, width: 12, value: 23 } # section length
+    - { byte: 9, width: 32, value: 1167264000 } # system time
+    - { byte: 13, width: 8, value: 0 } # gps offset
+    - { byte: 14, width: 16, value: 0b1110111100000010 } # daylight saving
+    - { byte: 16, width: 32, value: 0 } # crc
+  expected:
+    - SystemTime: "2017-01-01T00:00:00-00:00"
+    - GPSOffset: 0
+    - DaylightSaving.Status:  true
+    - DaylightSaving.DayOfMonth: 15
+    - DaylightSaving.Hour: 2

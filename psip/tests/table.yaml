@@ -1,0 +1,31 @@
+"Basic Table":
+  bits: 
+    - { byte: 0, width: 8, value: 42 }
+    - { byte: 1, bit: 0, width: 1, value: 0b1 }
+    - { byte: 1, bit: 1, width: 1, value: 0b1 }
+    - { byte: 1, bit: 2, width: 2, value: 0b11 }
+    - { byte: 1, bit: 4, width: 12, value: 13 }
+    - { byte: 3, width: 16, value: 1 }
+    - { byte: 5, bit: 0, width: 2, value: 0b11 }
+    - { byte: 5, bit: 2, width: 5, value: 24 }
+    - { byte: 5, bit: 7, width: 1, value: 1 }
+    - { byte: 6, width: 8, value: 128 }
+    - { byte: 7, width: 8, value: 128 }
+    - { byte: 8, width: 8, value: 0 }
+    - { byte: 9, width: 32, value: 0x01234567 }
+    - { byte: 13, width: 32, value: 0x00000000 }
+
+  expected:
+    - ID: 42
+    - SectionSyntaxIndicator: true
+    - PrivateIndicator: true
+    - SectionLength: 13
+    - IDExtension: 1
+    - VersionNumber: 24
+    - IsCurrent: true
+    - IsNext: false
+    - SectionNumber: 128
+    - LastSectionNumber: 128
+    - ProtocolVersion: 0
+    - Data: [ 0x01, 0x23, 0x45, 0x67 ]
+    - CRC: [ 0x00, 0x00, 0x00, 0x00 ]

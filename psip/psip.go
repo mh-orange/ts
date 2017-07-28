@@ -4,6 +4,21 @@ import (
 	"github.com/mh-orange/ts"
 )
 
+const (
+	// BasePID is the PID for all ATSC PSIP tables
+	BasePID     = uint16(0x1FFB)
+	MGTTableID  = uint8(0xC7)
+	TVCTTableID = uint8(0xC8)
+	CVCTTableID = uint8(0xC9)
+	SVCTTableID = uint8(0xDA)
+)
+
+// Tables are the collection of all ATSC PSIP tables
+type Tables interface {
+	Update(ts.Packet) error
+	VCT() VCT
+}
+
 type PSIPHandler struct {
 	vctCh     chan VCT
 	mgtCh     chan MGT

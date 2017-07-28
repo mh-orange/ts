@@ -5,6 +5,5 @@ type cvct struct {
 }
 
 func newCVCT(payload []byte) VCT {
-	vct := tvct(payload)
-	return &cvct{&vct}
+	return &cvct{&tvct{table(payload)}}
 }

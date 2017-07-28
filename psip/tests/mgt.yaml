@@ -1,0 +1,38 @@
+"Master Guide Table (2 channels)":
+  bits: 
+    - { byte: 1, bit: 4, width: 12, value: 39 } # section length
+    - { byte: 9, width: 16, value: 2 } # NumTables
+    - { byte: 11, width: 16, value: 1 } # Table Type
+    - { byte: 13, width: 3, value: 0b111 } # reserved
+    - { byte: 13, bit: 3, width: 13, value: 42 } # Table Type PID
+    - { byte: 15, width: 3, value: 0b111 } # reserved
+    - { byte: 15, bit: 3, width: 5, value: 1 } # Table Type Version Number
+    - { byte: 16, width: 32, value: 1 } # TableLength
+    - { byte: 20, width: 4, value: 0b1111 } # reserved
+    - { byte: 20, bit: 4, width: 12, value: 0 } # DescriptorLen
+    - { byte: 22, width: 16, value: 2 } # Table Type
+    - { byte: 24, width: 3, value: 0b111 } # reserved
+    - { byte: 24, bit: 3, width: 13, value: 43 } # Table Type PID
+    - { byte: 26, width: 3, value: 0b111 } # reserved
+    - { byte: 26, bit: 3, width: 5, value: 2 } # Table Type Version Number
+    - { byte: 27, width: 32, value: 2 } # TableLength
+    - { byte: 31, width: 4, value: 0b1111 } # reserved
+    - { byte: 31, bit: 4, width: 12, value: 0 } # DescriptorLen
+    - { byte: 33, bit: 0, width: 4, value: 0b1111 } # reserved
+    - { byte: 33, bit: 4, width: 12, value: 0 } # DescriptorLen
+    - { byte: 37, width: 32, value 0x000000 } # CRC
+
+  expected:
+    - NumTables: 2
+    - Tables[0].Type: 1
+    - Tables[0].PID: 42
+    - Tables[0].Version: 1
+    - Tables[0].TableLength: 1
+    - Tables[0].Descriptors: []
+    - Tables[1].Type: 2
+    - Tables[1].PID: 43
+    - Tables[1].Version: 2
+    - Tables[1].TableLength: 2
+    - Tables[1].Descriptors: []
+    - DescriptorsLength: 0
+    - Descriptors: []
