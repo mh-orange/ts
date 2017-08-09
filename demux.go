@@ -11,11 +11,9 @@ type Demux interface {
 }
 
 type demux struct {
-	inCh       <-chan Packet
-	channels   map[uint16]chan Packet
-	chMutex    sync.Mutex
-	clearPids  []uint16
-	clearMutex sync.Mutex
+	inCh     <-chan Packet
+	channels map[uint16]chan Packet
+	chMutex  sync.Mutex
 }
 
 func NewDemux(inCh <-chan Packet) Demux {
@@ -34,9 +32,12 @@ func (d *demux) Select(pid uint16) <-chan Packet {
 }
 
 func (d *demux) Clear(pid uint16) {
-	d.clearMutex.Lock()
-	d.clearPids = append(d.clearPids, pid)
-	d.clearMutex.Unlock()
+	d.chMutex.Lock()
+	if ch, found := d.channels[pid]; found {
+		close(ch)
+		delete(d.channels, pid)
+	}
+	d.chMutex.Unlock()
 }
 
 func (d *demux) Run() {
@@ -51,17 +52,6 @@ func (d *demux) Run() {
 			channel <- pkt
 		}
 		d.chMutex.Unlock()
-
-		d.clearMutex.Lock()
-		for _, pid := range d.clearPids {
-			d.chMutex.Lock()
-			if ch, found := d.channels[pid]; found {
-				close(ch)
-				delete(d.channels, pid)
-			}
-			d.chMutex.Unlock()
-		}
-		d.clearMutex.Unlock()
 	}
 
 	d.chMutex.Lock()
