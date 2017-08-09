@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+type counter struct {
+	packets []Packet
+}
+
 func createTestPacket(pid uint16, cc uint8, pusi bool) Packet {
 	p := NewPacket()
 	p.SetPID(pid)
@@ -39,17 +43,16 @@ func TestSelect(t *testing.T) {
 	b := []byte{}
 
 	pidCounts := make(map[uint16]int)
-	pids := make(map[uint16][]Packet, 0)
+	pids := make(map[uint16]*counter, 0)
 	for _, pkt := range packets {
 		b = append(b, []byte(pkt)...)
 		pid := pkt.PID()
 		if _, found := pids[pid]; !found {
-			pids[pid] = make([]Packet, 0)
+			pids[pid] = &counter{}
 			pidCounts[pid] = 0
 		}
 
-		cc := pkt.ContinuityCounter()
-		if cc < 4 && !pkt.IsNull() {
+		if !pkt.IsNull() {
 			pidCounts[pid]++
 		}
 	}
@@ -58,40 +61,39 @@ func TestSelect(t *testing.T) {
 
 	demux := NewDemux(Reader(buffer))
 	var wg sync.WaitGroup
-	var mutex sync.Mutex
 	for i := 0; i < len(pids); i++ {
 		wg.Add(1)
 		ch := demux.Select(uint16(i))
-		go func(pid uint16, ch <-chan Packet) {
+		go func(ch <-chan Packet, pid uint16, c *counter) {
 			count := 0
 			for packet := range ch {
-				mutex.Lock()
-				pids[pid] = append(pids[pid], packet)
-				mutex.Unlock()
+				c.packets = append(c.packets, packet)
 				count++
-				if count >= 4 {
-					demux.Clear(pid)
-				}
 			}
-
-			// sometimes an extra packet is written if the demuxer is blocked
-			// at this pid's channel write when we clear the selection, this
-			// should be at most one extra packet written to the channel
-			mutex.Lock()
-			if len(pids[pid]) > 4 {
-				pids[pid] = pids[pid][0 : len(pids[pid])-1]
-			}
-			mutex.Unlock()
 			wg.Done()
-		}(uint16(i), ch)
+		}(ch, uint16(i), pids[uint16(i)])
 	}
 
 	demux.Run()
 	wg.Wait()
 
 	for pid, pidCount := range pidCounts {
-		if pidCount != len(pids[pid]) {
-			t.Errorf("Pid %d expected %d packets but got %d", pid, pidCount, len(pids[pid]))
+		if pidCount != len(pids[pid].packets) {
+			t.Errorf("Pid %d expected %d packets but got %d", pid, pidCount, len(pids[pid].packets))
 		}
+	}
+}
+
+func TestClear(t *testing.T) {
+	buffer := bytes.NewReader(nil)
+	d := NewDemux(Reader(buffer)).(*demux)
+	d.Select(42)
+	if _, ok := d.channels[42]; !ok {
+		t.Errorf("Select should have added a channel to the channels map")
+	}
+
+	d.Clear(42)
+	if _, ok := d.channels[42]; ok {
+		t.Errorf("Clear should have removed a channel to the channels map")
 	}
 }
