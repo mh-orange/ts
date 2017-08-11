@@ -5,58 +5,47 @@ import (
 )
 
 type Demux interface {
-	Select(pid uint16) <-chan Packet
+	Select(pid uint16, handler PacketHandler)
 	Clear(pid uint16)
 	Run()
 }
 
 type demux struct {
-	inCh     <-chan Packet
-	channels map[uint16]chan Packet
+	reader   PacketReader
+	handlers map[uint16]PacketHandler
 	chMutex  sync.Mutex
 }
 
-func NewDemux(inCh <-chan Packet) Demux {
+func NewDemux(reader PacketReader) Demux {
 	return &demux{
-		inCh:     inCh,
-		channels: make(map[uint16]chan Packet),
+		reader:   reader,
+		handlers: make(map[uint16]PacketHandler),
 	}
 }
 
-func (d *demux) Select(pid uint16) <-chan Packet {
-	ch := make(chan Packet)
+func (d *demux) Select(pid uint16, handler PacketHandler) {
 	d.chMutex.Lock()
-	d.channels[pid] = ch
+	d.handlers[pid] = handler
 	d.chMutex.Unlock()
-	return ch
 }
 
 func (d *demux) Clear(pid uint16) {
 	d.chMutex.Lock()
-	if ch, found := d.channels[pid]; found {
-		close(ch)
-		delete(d.channels, pid)
-	}
+	delete(d.handlers, pid)
 	d.chMutex.Unlock()
 }
 
 func (d *demux) Run() {
-	for pkt := range d.inCh {
+	for pkt, err := d.reader.Read(); err == nil; pkt, err = d.reader.Read() {
 		if pkt.IsNull() {
 			continue
 		}
 
 		pid := pkt.PID()
 		d.chMutex.Lock()
-		if channel, found := d.channels[pid]; found {
-			channel <- pkt
+		if handler, found := d.handlers[pid]; found {
+			handler.Handle(pkt)
 		}
 		d.chMutex.Unlock()
 	}
-
-	d.chMutex.Lock()
-	for _, ch := range d.channels {
-		close(ch)
-	}
-	d.chMutex.Unlock()
 }

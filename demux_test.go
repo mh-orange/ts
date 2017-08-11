@@ -2,13 +2,8 @@ package ts
 
 import (
 	"bytes"
-	"sync"
 	"testing"
 )
-
-type counter struct {
-	packets []Packet
-}
 
 func createTestPacket(pid uint16, cc uint8, pusi bool) Packet {
 	p := NewPacket()
@@ -43,12 +38,12 @@ func TestSelect(t *testing.T) {
 	b := []byte{}
 
 	pidCounts := make(map[uint16]int)
-	pids := make(map[uint16]*counter, 0)
+	pids := make(map[uint16][]Packet, 0)
 	for _, pkt := range packets {
 		b = append(b, []byte(pkt)...)
 		pid := pkt.PID()
 		if _, found := pids[pid]; !found {
-			pids[pid] = &counter{}
+			pids[pid] = make([]Packet, 0)
 			pidCounts[pid] = 0
 		}
 
@@ -59,41 +54,33 @@ func TestSelect(t *testing.T) {
 
 	buffer := bytes.NewReader(b)
 
-	demux := NewDemux(Reader(buffer))
-	var wg sync.WaitGroup
+	demux := NewDemux(NewReader(buffer))
 	for i := 0; i < len(pids); i++ {
-		wg.Add(1)
-		ch := demux.Select(uint16(i))
-		go func(ch <-chan Packet, pid uint16, c *counter) {
-			count := 0
-			for packet := range ch {
-				c.packets = append(c.packets, packet)
-				count++
-			}
-			wg.Done()
-		}(ch, uint16(i), pids[uint16(i)])
+		pid := uint16(i)
+		demux.Select(pid, PacketHandlerFunc(func(pkt Packet) {
+			pids[pid] = append(pids[pid], pkt)
+		}))
 	}
 
 	demux.Run()
-	wg.Wait()
 
 	for pid, pidCount := range pidCounts {
-		if pidCount != len(pids[pid].packets) {
-			t.Errorf("Pid %d expected %d packets but got %d", pid, pidCount, len(pids[pid].packets))
+		if pidCount != len(pids[pid]) {
+			t.Errorf("Pid %d expected %d packets but got %d", pid, pidCount, len(pids[pid]))
 		}
 	}
 }
 
 func TestClear(t *testing.T) {
 	buffer := bytes.NewReader(nil)
-	d := NewDemux(Reader(buffer)).(*demux)
-	d.Select(42)
-	if _, ok := d.channels[42]; !ok {
+	d := NewDemux(NewReader(buffer)).(*demux)
+	d.Select(42, PacketHandlerFunc(func(pkt Packet) {}))
+	if _, ok := d.handlers[42]; !ok {
 		t.Errorf("Select should have added a channel to the channels map")
 	}
 
 	d.Clear(42)
-	if _, ok := d.channels[42]; ok {
+	if _, ok := d.handlers[42]; ok {
 		t.Errorf("Clear should have removed a channel to the channels map")
 	}
 }

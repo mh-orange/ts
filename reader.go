@@ -10,6 +10,10 @@ var (
 	ErrSyncByteNotFound = fmt.Errorf("Sync Byte (0x47) not found in bit stream")
 )
 
+type PacketReader interface {
+	Read() (Packet, error)
+}
+
 // Credit: https://github.com/Comcast/gots/blob/master/packet/io.go
 func readSync(reader *bufio.Reader) (err error) {
 	data := make([]byte, 1)
@@ -41,25 +45,31 @@ func readSync(reader *bufio.Reader) (err error) {
 	return
 }
 
-func reader(reader *bufio.Reader, outCh chan Packet) {
-	err := readSync(reader)
-
-	for err == nil {
-		pkt := make(Packet, PacketSize)
-		if _, err = io.ReadFull(reader, pkt); err != nil {
-			continue
-		}
-		outCh <- pkt
-	}
-	close(outCh)
+type reader struct {
+	r    *bufio.Reader
+	sync bool
 }
 
-func Reader(r io.Reader) <-chan Packet {
-	outCh := make(chan Packet)
+func (r *reader) Read() (pkt Packet, err error) {
+	if !r.sync {
+		err = readSync(r.r)
+		if err == nil {
+			r.sync = true
+		}
+	}
+
+	if err == nil {
+		pkt = make(Packet, PacketSize)
+		_, err = io.ReadFull(r.r, pkt)
+	}
+
+	return
+}
+
+func NewReader(r io.Reader) PacketReader {
 	if _, ok := r.(*bufio.Reader); !ok {
 		r = bufio.NewReader(r)
 	}
 
-	go reader(r.(*bufio.Reader), outCh)
-	return outCh
+	return &reader{r.(*bufio.Reader), false}
 }

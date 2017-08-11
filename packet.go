@@ -22,6 +22,16 @@ var (
 	ErrNoSeamlessSplice       = fmt.Errorf("Adaptation Extension Field has no Seamless Splice")
 )
 
+type PacketHandler interface {
+	Handle(pkt Packet)
+}
+
+type PacketHandlerFunc func(pkt Packet)
+
+func (phf PacketHandlerFunc) Handle(pkt Packet) {
+	phf(pkt)
+}
+
 type AdaptationExtension []byte
 
 func (ae AdaptationExtension) Length() int {
