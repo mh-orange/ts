@@ -17,7 +17,7 @@ func (thf TableHandlerFunc) Handle(table Table) {
 	thf(table)
 }
 
-type TableDemuxer interface {
+type TableDemux interface {
 	Handle(pkt ts.Packet)
 	Clear(id uint8)
 	Select(id uint8, handler TableHandler)
@@ -38,8 +38,6 @@ type defaultTableBuffer struct {
 func sectionLength(data []byte) (length int) {
 	if len(data) > 3 && data[0] != 0xff {
 		length = 3 + int(ts.Uimsbf16(data[1:3], 16))
-	} else {
-		length = 0
 	}
 	return length
 }
@@ -61,14 +59,10 @@ func (tb *defaultTableBuffer) Flush() {
 }
 
 func (tb *defaultTableBuffer) Append(data []byte) {
-	if len(data) == 0 {
-		return
-	}
-
 	tb.buffer = append(tb.buffer, data...)
 	// stopping condition is end of the buffer (do nothing) or
 	// table id of 0xff (flush remaining bytes)
-	for tb.buffer[0] != 0xff {
+	for len(tb.buffer) > 0 && tb.buffer[0] != 0xff {
 		length := sectionLength(tb.buffer)
 		if length > 0 && length < len(tb.buffer) {
 			table := make(Table, length)
@@ -80,12 +74,12 @@ func (tb *defaultTableBuffer) Append(data []byte) {
 		}
 	}
 
-	if tb.buffer[0] == 0xff {
+	if len(tb.buffer) > 0 && tb.buffer[0] == 0xff {
 		tb.buffer = nil
 	}
 }
 
-type tableDemuxer struct {
+type tableDemux struct {
 	buffer   TableBuffer
 	mu       sync.Mutex
 	handlers map[uint8]TableHandler
@@ -93,27 +87,27 @@ type tableDemuxer struct {
 	cc       uint8
 }
 
-func NewTableDemuxer() TableDemuxer {
-	return &tableDemuxer{
+func NewTableDemux() TableDemux {
+	return &tableDemux{
 		buffer:   &defaultTableBuffer{},
 		handlers: make(map[uint8]TableHandler),
 		first:    true,
 	}
 }
 
-func (td *tableDemuxer) Select(tableID uint8, handler TableHandler) {
+func (td *tableDemux) Select(tableID uint8, handler TableHandler) {
 	td.mu.Lock()
 	td.handlers[tableID] = handler
 	td.mu.Unlock()
 }
 
-func (td *tableDemuxer) Clear(tableID uint8) {
+func (td *tableDemux) Clear(tableID uint8) {
 	td.mu.Lock()
 	delete(td.handlers, tableID)
 	td.mu.Unlock()
 }
 
-func (td *tableDemuxer) Handle(pkt ts.Packet) {
+func (td *tableDemux) Handle(pkt ts.Packet) {
 	var payload []byte
 	discontinuous := false
 	// check continuity counter

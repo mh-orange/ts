@@ -86,7 +86,7 @@ func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, t
 	return packets
 }
 
-func TestTableDemuxer(t *testing.T) {
+func TestTableDemux(t *testing.T) {
 	tests := []*struct {
 		offset                int
 		length                int
@@ -153,7 +153,7 @@ func TestTableDemuxer(t *testing.T) {
 		}
 	}
 
-	demuxer := NewTableDemuxer()
+	demuxer := NewTableDemux()
 	foundTables := 0
 	tables := make([]Table, 0)
 	demuxer.Select(1, TableHandlerFunc(func(table Table) {
@@ -179,5 +179,18 @@ func TestTableDemuxer(t *testing.T) {
 			i--
 		}
 		i++
+	}
+}
+
+func TestClear(t *testing.T) {
+	d := NewTableDemux().(*tableDemux)
+	d.Select(42, TableHandlerFunc(func(table Table) {}))
+	if _, ok := d.handlers[42]; !ok {
+		t.Errorf("Select should have added a channel to the channels map")
+	}
+
+	d.Clear(42)
+	if _, ok := d.handlers[42]; ok {
+		t.Errorf("Clear should have removed a channel to the channels map")
 	}
 }
