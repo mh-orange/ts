@@ -10,18 +10,18 @@ func getPacket(pusi bool, rai bool, pts uint64) Packet {
 	pkt := NewPacket()
 	pkt.SetPID(1)
 	pkt.SetPUSI(pusi)
-	pkt.SetHasPayload(true)
+	pkt.SetHasPayload()
 
 	if rai {
-		pkt.SetHasAdaptationField(true)
+		pkt.SetHasAdaptationField()
 		field, _ := pkt.AdaptationField()
-		field.SetIsRandomAccess(true)
+		field.SetIsRandomAccess()
 	}
 
 	if pusi {
 		payload, _ := pkt.Payload()
 		header := FillPESHeader(payload)
-		header.SetHasPTS(true)
+		header.SetHasPTS()
 		header.SetPTS(newTimestamp(pts, 90000))
 	}
 	return pkt

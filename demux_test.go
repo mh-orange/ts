@@ -10,7 +10,7 @@ func createTestPacket(pid uint16, cc uint8, pusi bool) Packet {
 	p.SetPID(pid)
 	p.SetContinuityCounter(cc)
 	p.SetPUSI(pusi)
-	p.SetHasPayload(true)
+	p.SetHasPayload()
 	return p
 }
 

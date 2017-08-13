@@ -69,8 +69,8 @@ func (p PESHeader) HasPTS() bool {
 	return Bool(p[7], 0)
 }
 
-func (p PESHeader) SetHasPTS(hasPts bool) {
-	SetBool(&p[7], 0, hasPts)
+func (p PESHeader) SetHasPTS() {
+	SetBool(&p[7], 0, true)
 	p.updateLength()
 }
 

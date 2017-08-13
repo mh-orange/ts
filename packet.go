@@ -111,47 +111,53 @@ func (a AdaptationField) Length() int {
 }
 
 func (a AdaptationField) IsDiscontinuous() bool {
-	return Bool(a[1], 7)
+	return a.Length() > 0 && Bool(a[1], 0)
 }
 
-func (a AdaptationField) SetIsDiscontinuous(isDiscontinuous bool) {
-	SetBool(&a[1], 7, isDiscontinuous)
+func (a AdaptationField) SetIsDiscontinuous() {
+	if a.Length() < 1 {
+		a[0] = 1
+	}
+	SetBool(&a[1], 0, true)
 }
 
 func (a AdaptationField) IsRandomAccess() bool {
-	return Bool(a[1], 6)
+	return a.Length() > 0 && Bool(a[1], 1)
 }
 
-func (a AdaptationField) SetIsRandomAccess(isRandomAccess bool) {
-	SetBool(&a[1], 6, isRandomAccess)
+func (a AdaptationField) SetIsRandomAccess() {
+	if a.Length() < 1 {
+		a[0] = 1
+	}
+	SetBool(&a[1], 1, true)
 }
 
 func (a AdaptationField) HasElementaryStreamPriorty() bool {
-	return Bool(a[1], 5)
+	return a.Length() > 0 && Bool(a[1], 2)
 }
 
 func (a AdaptationField) HasPCR() bool {
-	return Bool(a[1], 4)
+	return a.Length() > 0 && Bool(a[1], 3)
 }
 
 func (a AdaptationField) HasOPCR() bool {
-	return Bool(a[1], 3)
+	return a.Length() > 0 && Bool(a[1], 4)
 }
 
 func (a AdaptationField) HasSplicingPoint() bool {
-	return Bool(a[1], 2)
+	return a.Length() > 0 && Bool(a[1], 5)
 }
 
 func (a AdaptationField) HasTransportPrivateData() bool {
-	return Bool(a[1], 1)
+	return a.Length() > 0 && Bool(a[1], 6)
 }
 
 func (a AdaptationField) HasAdaptationExtension() bool {
-	return Bool(a[1], 0)
+	return a.Length() > 0 && Bool(a[1], 7)
 }
 
 func (a AdaptationField) PCR() (TimeStamp, error) {
-	if a.HasPCR() {
+	if a.HasPCR() && a.Length() > a.pcrOffset()+6 {
 		return CalculatePCR(a[2:]), nil
 	}
 	return nil, ErrNoPCR
@@ -169,7 +175,7 @@ func (a AdaptationField) opcrOffset() int {
 }
 
 func (a AdaptationField) OPCR() (TimeStamp, error) {
-	if a.HasOPCR() {
+	if a.HasOPCR() && a.Length() > a.opcrOffset()+6 {
 		return CalculatePCR(a[a.opcrOffset():]), nil
 	}
 	return nil, ErrNoOPCR
@@ -282,25 +288,24 @@ func (p Packet) HasAdaptationField() bool {
 	return Bool(p[3], 2)
 }
 
-func (p Packet) SetHasAdaptationField(hasAdaptationField bool) {
-	SetBool(&p[3], 2, hasAdaptationField)
-	SetUimsbf8(&p[4], 1)
+func (p Packet) SetHasAdaptationField() {
+	SetBool(&p[3], 2, true)
 }
 
 func (p Packet) HasPayload() bool {
 	return Bool(p[3], 3)
 }
 
-func (p Packet) SetHasPayload(hasPayload bool) {
-	SetBool(&p[3], 3, hasPayload)
+func (p Packet) SetHasPayload() {
+	SetBool(&p[3], 3, true)
 }
 
 func (p Packet) ContinuityCounter() uint8 {
-	return uint8(p[3] >> 4)
+	return uint8(p[3]) & 0x0f
 }
 
 func (p Packet) SetContinuityCounter(cc uint8) {
-	p[3] = (cc << 4) | p[3]&0x0f
+	p[3] = (p[3] & 0xf0) | (0x0f & cc)
 }
 
 func (p Packet) AdaptationField() (AdaptationField, error) {
@@ -312,7 +317,7 @@ func (p Packet) AdaptationField() (AdaptationField, error) {
 
 func (p Packet) payload() []byte {
 	if p.HasAdaptationField() {
-		return p[5+int(p[4]):]
+		return p[4+int(p[4]):]
 	}
 	return p[4:]
 }
@@ -325,7 +330,7 @@ func (p Packet) Payload() ([]byte, error) {
 }
 
 func (p Packet) SetPayload(payload []byte) int {
-	p.SetHasPayload(len(payload) > 0)
+	p.SetHasPayload()
 	return copy(p.payload(), payload)
 }
 
