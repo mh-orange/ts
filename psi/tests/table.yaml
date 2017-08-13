@@ -1,19 +1,18 @@
 "Basic Table":
   bits: 
-    - { byte: 0, width: 8, value: 42 }
-    - { byte: 1, bit: 0, width: 1, value: 0b1 }
-    - { byte: 1, bit: 1, width: 1, value: 0b1 }
-    - { byte: 1, bit: 2, width: 2, value: 0b11 }
-    - { byte: 1, bit: 4, width: 12, value: 13 }
-    - { byte: 3, width: 16, value: 1 }
-    - { byte: 5, bit: 0, width: 2, value: 0b11 }
-    - { byte: 5, bit: 2, width: 5, value: 24 }
-    - { byte: 5, bit: 7, width: 1, value: 1 }
-    - { byte: 6, width: 8, value: 128 }
-    - { byte: 7, width: 8, value: 128 }
-    - { byte: 8, width: 8, value: 0 }
-    - { byte: 9, width: 32, value: 0x01234567 }
-    - { byte: 13, width: 32, value: 0x00000000 }
+    - { byte: 0, width: 8, value: 42 } # table ID
+    - { byte: 1, bit: 0, width: 1, value: 0b1 }  # section syntax
+    - { byte: 1, bit: 1, width: 1, value: 0b1 }  # private bit
+    - { byte: 1, bit: 2, width: 2, value: 0b11 } # reserved
+    - { byte: 1, bit: 4, width: 12, value: 13 }  # section length
+    - { byte: 3, width: 16, value: 1 }           # Table ID extension
+    - { byte: 5, bit: 0, width: 2, value: 0b11 } # reserved
+    - { byte: 5, bit: 2, width: 5, value: 24 }   # version number
+    - { byte: 5, bit: 7, width: 1, value: 1 }    # current/next
+    - { byte: 6, width: 8, value: 128 }          # section number
+    - { byte: 7, width: 8, value: 128 }          # last section number
+    - { byte: 8, width: 32, value: 0x01234567 }  # table data
+    - { byte: 12, width: 32, value: 0x02030405 } # crc
 
   expected:
     - ID: 42
@@ -26,6 +25,5 @@
     - IsNext: false
     - SectionNumber: 128
     - LastSectionNumber: 128
-    - ProtocolVersion: 0
     - Data: [ 0x01, 0x23, 0x45, 0x67 ]
-    - CRC: [ 0x00, 0x00, 0x00, 0x00 ]
+    - CRC: [ 0x02, 0x03, 0x04, 0x05 ]

@@ -9,43 +9,35 @@ import (
 	"github.com/mh-orange/ts"
 )
 
-func createTable(crc bool, length int) Table {
-	// add crc
-	length += 4
-
-	payload := make([]byte, length)
-
+func createTable(id int, crc bool, length int) Table {
 	// random payload
+	payload := make([]byte, length)
 	rand.Read(payload)
 
-	// table ID
-	payload[0] = uint8(1)
+	table := CreateTable(uint8(id), payload)
 
-	// section length
-	payload[1] = uint8(uint16(length-3) >> 8 & 0x03)
-	payload[2] = uint8(0xff&length - 3)
-
-	// compute CRC
-	if crc {
-		computedCrc := ts.ComputeCRC(payload[0 : len(payload)-4])
-		copy(payload[len(payload)-4:], computedCrc)
+	if !crc {
+		table[len(table)-4] = 0x00
+		table[len(table)-3] = 0x00
+		table[len(table)-2] = 0x00
+		table[len(table)-1] = 0x00
 	}
 
-	return Table(payload)
+	return table
 }
 
 var cc uint8
 
 func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, table Table) []ts.Packet {
-	p := make([]byte, len(table)+offset+1)
-	copy(p[offset+1:], table)
+	payload := make([]byte, len(table)+offset+1)
+	copy(payload[offset+1:], table)
 
 	// offset byte
-	p[0] = uint8(offset)
+	payload[0] = uint8(offset)
 
 	// filler
 	for i := 1; i < offset+1; i++ {
-		p[i] = 0xff
+		payload[i] = 0xff
 	}
 
 	packets := make([]ts.Packet, 0)
@@ -59,28 +51,28 @@ func createPackets(offset int, discontinuity bool, expectedDiscontinuity bool, t
 
 		pkt.SetContinuityCounter(cc)
 		pkt.SetPUSI(offset == 0)
-		pkt.SetHasPayload(true)
+		pkt.SetHasPayload()
 
 		if expectedDiscontinuity {
-			pkt.SetHasAdaptationField(true)
+			pkt.SetHasAdaptationField()
 			field, _ := pkt.AdaptationField()
-			field.SetIsDiscontinuous(true)
+			field.SetIsDiscontinuous()
 		}
 
-		length := pkt.SetPayload(p[offset:])
+		length := pkt.SetPayload(payload[offset:])
 		offset += length
-		payload, _ := pkt.Payload()
+		p, _ := pkt.Payload()
 
 		// set the rest of the packet to 0xff for stuffing bits
-		for i := length; i < len(payload); i++ {
-			payload[i] = 0xff
+		for i := length; i < len(p); i++ {
+			p[i] = 0xff
 		}
 		packets = append(packets, pkt)
 
 		cc += 1
 	}
 
-	if offset != len(p) {
+	if offset != len(payload) {
 		panic("bad offset length")
 	}
 	return packets
@@ -140,40 +132,44 @@ func TestTableDemux(t *testing.T) {
 	}
 
 	expectedTables := 0
+	receivedTables := make([]Table, 0)
 	packets := make([]ts.Packet, 0)
 
-	for _, test := range tests {
-		test.table = createTable(test.crc, test.length)
+	demuxer := NewTableDemux()
+	foundTables := 0
+	i := 0
+
+	for j, test := range tests {
+		test.table = createTable(j, test.crc, test.length)
 		if test.crc && (!test.discontinuity || test.expectedDiscontinuity) {
 			expectedTables += 1
 		}
+
 		pkts := createPackets(test.offset, test.discontinuity, test.expectedDiscontinuity, test.table)
 		for _, pkt := range pkts {
 			packets = append(packets, pkt)
 		}
-	}
 
-	demuxer := NewTableDemux()
-	foundTables := 0
-	tables := make([]Table, 0)
-	demuxer.Select(1, TableHandlerFunc(func(table Table) {
-		foundTables++
-		tables = append(tables, table)
-	}))
+		demuxer.Select(uint8(j), TableHandlerFunc(func(table Table) {
+			foundTables++
+			i++
+			receivedTables = append(receivedTables, table)
+		}))
+	}
 
 	for _, pkt := range packets {
 		demuxer.Handle(pkt)
 	}
 
 	if expectedTables != foundTables {
-		t.Errorf("Expected %d payloads but got %d", expectedTables, foundTables)
+		t.Errorf("Expected %d tables but got %d", expectedTables, foundTables)
 	}
 
-	i := 0
-	for _, test := range tests {
+	i = 0
+	for j, test := range tests {
 		if test.crc && (!test.discontinuity || test.expectedDiscontinuity) {
-			if !bytes.Equal(test.table, tables[i]) {
-				t.Errorf("Payload %d expected\n%s\ngot\n%s\n", i, hex.Dump(test.table), hex.Dump(tables[i]))
+			if i < len(receivedTables) && !bytes.Equal(test.table, receivedTables[i]) {
+				t.Errorf("Test %d: Table %d expected\n%s\ngot\n%s\n", j, i, hex.Dump(test.table), hex.Dump(receivedTables[i]))
 			}
 		} else {
 			i--

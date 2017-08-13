@@ -14,6 +14,7 @@ func TestTables(t *testing.T) {
 		file        string
 	}{
 		{func(data []byte) interface{} { return Table(data) }, "tests/table.yaml"},
+		{func(data []byte) interface{} { return &PAT{CreateTable(1, data)} }, "tests/pat.yaml"},
 	}
 
 	for _, testCase := range tests {

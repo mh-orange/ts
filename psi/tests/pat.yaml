@@ -1,0 +1,19 @@
+"Basic Table":
+  bits: 
+    - { byte: 0, width: 16, value: 42 }
+    - { byte: 2, width: 3, value: 0x07 }
+    - { byte: 2, bit: 3, width: 13, value: 57 }
+    - { byte: 4, width: 16, value: 43 }
+    - { byte: 6, width: 3, value: 0x07 }
+    - { byte: 6, bit: 3, width: 13, value: 58 }
+    - { byte: 8, width: 16, value: 44 }
+    - { byte: 10, width: 3, value: 0x07 }
+    - { byte: 10, bit: 3, width: 13, value: 59 }
+
+  expected:
+    - Entries[0].Program: 42
+    - Entries[0].PID: 57
+    - Entries[1].Program: 43
+    - Entries[1].PID: 58
+    - Entries[2].Program: 44
+    - Entries[2].PID: 59

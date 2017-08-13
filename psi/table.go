@@ -6,6 +6,22 @@ import (
 
 type Table []byte
 
+func CreateTable(id uint8, data []byte) Table {
+	// table is data length + 8 (for header bits) + 4 (for CRC)
+	length := len(data) + 12
+
+	table := make(Table, length)
+	table[0] = id
+	table[1] |= 0x30
+	table[1] = uint8(uint16(length-3) >> 8 & 0x03)
+	table[2] = uint8(0xff & (length - 3))
+
+	copy(table[8:], data)
+	copy(table[length-4:], ts.ComputeCRC(table[0:length-4]))
+
+	return table
+}
+
 func (t Table) ID() uint8 {
 	return ts.Uimsbf8(t[0])
 }
@@ -46,16 +62,8 @@ func (t Table) LastSectionNumber() uint8 {
 	return ts.Uimsbf8(t[7])
 }
 
-func (t Table) ProtocolVersion() uint8 {
-	return ts.Uimsbf8(t[8])
-}
-
 func (t Table) Data() []byte {
-	// 6 bytes precede the data field and 4 bytes (crc)
-	// follow the data field (10 bytes) the offset is
-	// starting at byte 9, so the ending index is the
-	// section length
-	return t[9:t.SectionLength()]
+	return t[8 : len(t)-4]
 }
 
 func (t Table) CRC() []byte {

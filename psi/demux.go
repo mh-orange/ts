@@ -113,6 +113,7 @@ func (td *tableDemux) Handle(pkt ts.Packet) {
 	// check continuity counter
 	nextCc := pkt.ContinuityCounter()
 	if !td.first && td.cc+1 != nextCc {
+		discontinuous = true
 		// check for expected discontinuity
 		if field, err := pkt.AdaptationField(); err == nil {
 			discontinuous = !field.IsDiscontinuous()
