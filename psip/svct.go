@@ -1,11 +1,11 @@
 package psip
 
 type svct struct {
-	table
+	*Table
 }
 
 func newSVCT(payload []byte) VCT {
-	return &svct{table(payload)}
+	return &svct{&Table{payload}}
 }
 
 func (vct svct) NumChannelsInSection() int {

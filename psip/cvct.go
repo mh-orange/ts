@@ -1,9 +1,9 @@
 package psip
 
-type cvct struct {
-	*tvct
+type CVCT struct {
+	*TVCT
 }
 
 func newCVCT(payload []byte) VCT {
-	return &cvct{&tvct{table(payload)}}
+	return &CVCT{&TVCT{&Table{payload}}}
 }

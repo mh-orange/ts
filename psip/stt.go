@@ -20,33 +20,26 @@ func (dsc DSControl) Hour() int {
 	return int(dsc[1])
 }
 
-type STT interface {
-	Table
-	SystemTime() time.Time
-	GPSOffset() uint8
-	DaylightSaving() DSControl
+type STT struct {
+	*Table
 }
 
 var (
 	baseTime = time.Date(1980, time.January, 6, 0, 0, 0, 0, time.UTC)
 )
 
-type stt struct {
-	table
+func newSTT(payload []byte) *STT {
+	return &STT{&Table{payload}}
 }
 
-func newSTT(payload []byte) STT {
-	return &stt{table(payload)}
-}
-
-func (s *stt) SystemTime() time.Time {
+func (s *STT) SystemTime() time.Time {
 	return baseTime.Add(time.Duration(ts.Uimsbf32(s.Data()[0:4], 32)) * time.Second)
 }
 
-func (s *stt) GPSOffset() uint8 {
+func (s *STT) GPSOffset() uint8 {
 	return ts.Uimsbf8(s.Data()[4])
 }
 
-func (s *stt) DaylightSaving() DSControl {
+func (s *STT) DaylightSaving() DSControl {
 	return DSControl(s.Data()[5:7])
 }

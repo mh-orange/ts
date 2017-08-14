@@ -2,6 +2,7 @@ package psip
 
 import (
 	"github.com/mh-orange/ts"
+	"github.com/mh-orange/ts/psi"
 )
 
 const (
@@ -23,7 +24,7 @@ type Channel interface {
 	ServiceType() uint8
 	SourceID() uint16
 	DescriptorsLength() int
-	Descriptors() []ts.Descriptor
+	Descriptors() []psi.Descriptor
 	Length() int
 	CRC() []byte
 }
@@ -91,8 +92,8 @@ func (c channel) DescriptorsLength() int {
 	return int(c[30]&0x03)<<8 | int(c[31])
 }
 
-func (c channel) Descriptors() []ts.Descriptor {
-	return ts.Descriptors(c[32 : 32+c.DescriptorsLength()])
+func (c channel) Descriptors() []psi.Descriptor {
+	return psi.Descriptors(c[32 : 32+c.DescriptorsLength()])
 }
 
 func (c channel) CRC() []byte {

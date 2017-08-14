@@ -2,6 +2,7 @@ package psip
 
 import (
 	"github.com/mh-orange/ts"
+	"github.com/mh-orange/ts/psi"
 )
 
 type TableInfo []byte
@@ -26,8 +27,8 @@ func (t TableInfo) DescriptorsLength() int {
 	return int(ts.Uimsbf16(t[9:11], 16) & 0x0fff)
 }
 
-func (t TableInfo) Descriptors() []ts.Descriptor {
-	return ts.Descriptors(t[11 : 11+t.DescriptorsLength()])
+func (t TableInfo) Descriptors() []psi.Descriptor {
+	return psi.Descriptors(t[11 : 11+t.DescriptorsLength()])
 }
 
 func (t TableInfo) Length() int {
@@ -38,15 +39,15 @@ func (t TableInfo) Length() int {
 type MGT interface {
 	NumTables() int
 	Tables() []TableInfo
-	Descriptors() []ts.Descriptor
+	Descriptors() []psi.Descriptor
 }
 
 type mgt struct {
-	table
+	*Table
 }
 
 func newMGT(payload []byte) MGT {
-	return &mgt{table(payload)}
+	return &mgt{&Table{psi.CreateTable(0xc7, payload)}}
 }
 
 func (m *mgt) NumTables() int {
@@ -76,8 +77,8 @@ func (m *mgt) DescriptorsLength() int {
 	return int(ts.Uimsbf16(m.Data()[offset:offset+2], 16) & 0x0fff)
 }
 
-func (m *mgt) Descriptors() []ts.Descriptor {
+func (m *mgt) Descriptors() []psi.Descriptor {
 	start := m.descriptorLengthOffset() + 2
-	end := len(m.Data()) - 4
-	return ts.Descriptors(m.Data()[start:end])
+	end := len(m.Data())
+	return psi.Descriptors(m.Data()[start:end])
 }

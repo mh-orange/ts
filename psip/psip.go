@@ -25,7 +25,7 @@ type PSIPHandler struct {
 	payloadCh <-chan []byte
 }
 
-func HandlePSIPStreams(demux ts.Demux) *PSIPHandler {
+/*func HandlePSIPStreams(demux ts.Demux) *PSIPHandler {
 	handler := &PSIPHandler{
 		payloadCh: ts.HandleTableStreams(demux.Select(BasePID)),
 	}
@@ -76,4 +76,4 @@ func (ph *PSIPHandler) SelectMGT() <-chan MGT {
 	ph.mgtCh = make(chan MGT)
 
 	return ph.mgtCh
-}
+}*/

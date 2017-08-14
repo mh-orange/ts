@@ -13,7 +13,7 @@ func TestTables(t *testing.T) {
 		constructor func([]byte) interface{}
 		file        string
 	}{
-		{func(data []byte) interface{} { return table(data) }, "tests/table.yaml"},
+		{func(data []byte) interface{} { return &Table{data} }, "tests/table.yaml"},
 		{func(data []byte) interface{} { return newSTT(data) }, "tests/stt.yaml"},
 		{func(data []byte) interface{} { return newMGT(data) }, "tests/mgt.yaml"},
 		{func(data []byte) interface{} { return channel(data) }, "tests/channel.yaml"},

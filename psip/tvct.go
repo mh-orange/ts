@@ -4,19 +4,19 @@ import (
 	"github.com/mh-orange/ts"
 )
 
-type tvct struct {
-	table
+type TVCT struct {
+	*Table
 }
 
 func newTVCT(payload []byte) VCT {
-	return &tvct{table(payload)}
+	return &TVCT{&Table{payload}}
 }
 
-func (vct *tvct) NumChannelsInSection() int {
+func (vct *TVCT) NumChannelsInSection() int {
 	return int(ts.Uimsbf8(vct.Data()[0]))
 }
 
-func (vct *tvct) Channels() []Channel {
+func (vct *TVCT) Channels() []Channel {
 	numChannels := vct.NumChannelsInSection()
 	channels := make([]Channel, numChannels)
 	offset := 1
@@ -28,7 +28,7 @@ func (vct *tvct) Channels() []Channel {
 	return channels
 }
 
-func (vct *tvct) channelLength() int {
+func (vct *TVCT) channelLength() int {
 	length := 0
 	for _, channel := range vct.Channels() {
 		length += channel.Length()
@@ -36,7 +36,7 @@ func (vct *tvct) channelLength() int {
 	return length
 }
 
-func (vct *tvct) AdditionalDescriptorsLength() uint16 {
+func (vct *TVCT) AdditionalDescriptorsLength() uint16 {
 	start := 1 + vct.channelLength()
 	end := start + 2
 	return ts.Uimsbf16(vct.Data()[start:end], 10)
