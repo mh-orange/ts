@@ -1,0 +1,15 @@
+"Program Map Table":
+  bits: 
+    - { byte: 0, width: 3, value: 0x07 }       # reserved
+    - { byte: 0, width: 13, value: 0x1fff }    # PCR PID
+    - { byte: 2, width: 4, value: 0x0f }       # reserved
+    - { byte: 2, bit: 4, width: 2, value: 0 }  # unused
+    - { byte: 2, bit: 6, width: 10, value: 0 } # program info length
+
+  expected:
+    - Entries[0].Program: 42
+    - Entries[0].PID: 57
+    - Entries[1].Program: 43
+    - Entries[1].PID: 58
+    - Entries[2].Program: 44
+    - Entries[2].PID: 59
