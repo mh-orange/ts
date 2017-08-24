@@ -1,4 +1,4 @@
-"Basic Table":
+"Program Association Table":
   bits: 
     - { byte: 0, width: 16, value: 42 }
     - { byte: 2, width: 3, value: 0x07 }
